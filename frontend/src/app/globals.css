@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 84% 5%;
+    --foreground: 210 40% 98%;
+  }
+  * { box-sizing: border-box; }
+  body { @apply antialiased; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-gray-900; }
+  ::-webkit-scrollbar-thumb { @apply bg-gray-600 rounded-full; }
+}
+
+@layer components {
+  .card { @apply bg-gray-900 border border-gray-800 rounded-xl p-5; }
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg
+           font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply text-gray-400 hover:text-white hover:bg-gray-800 px-3 py-2 rounded-lg
+           transition-colors text-sm;
+  }
+  .badge-critical { @apply bg-red-900 text-red-200 border border-red-700 px-2 py-0.5 rounded text-xs font-bold; }
+  .badge-high     { @apply bg-red-800 text-red-200 border border-red-600 px-2 py-0.5 rounded text-xs font-bold; }
+  .badge-medium   { @apply bg-amber-900 text-amber-200 border border-amber-600 px-2 py-0.5 rounded text-xs font-semibold; }
+  .badge-low      { @apply bg-yellow-900 text-yellow-200 border border-yellow-600 px-2 py-0.5 rounded text-xs; }
+  .badge-info     { @apply bg-blue-900 text-blue-200 border border-blue-600 px-2 py-0.5 rounded text-xs; }
+}
