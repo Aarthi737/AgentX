@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     supabase_url: str = Field(default="")
     supabase_anon_key: str = Field(default="")
     supabase_service_role_key: str = Field(default="")
-    database_url: str = Field(default="")
+    database_url: str = Field(default="sqlite+aiosqlite:///./test.db")
 
     # ── GitHub ───────────────────────────────────────────────────────────────
     github_default_token: str = Field(default="")
