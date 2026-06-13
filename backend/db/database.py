@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 
 from config.settings import settings
 
@@ -24,13 +25,23 @@ _db_url = settings.database_url.replace(
     "postgres://", "postgresql+asyncpg://"
 )
 
-engine = create_async_engine(
-    _db_url,
-    echo=not settings.is_production,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-)
+# SQLite doesn't support pool_size/max_overflow — use NullPool for it
+_is_sqlite = "sqlite" in _db_url
+
+if _is_sqlite:
+    engine = create_async_engine(
+        _db_url,
+        echo=not settings.is_production,
+        poolclass=NullPool,
+    )
+else:
+    engine = create_async_engine(
+        _db_url,
+        echo=not settings.is_production,
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20,
+    )
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
