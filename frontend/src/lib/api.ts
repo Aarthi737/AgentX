@@ -1,64 +1,40 @@
-// AgentX — API Client
 import axios from 'axios';
-import type {
-  AFEStats, RunDetail, RunListItem, RunStartResponse, StartRunRequest,
-} from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 30000,
-});
+export const startRun = async (data: { repo_url: string; branch?: string; github_token?: string }) => {
+  const res = await axios.post(`${API_URL}/api/v1/runs`, data);
+  return res.data;
+};
 
-// ── Runs ────────────────────────────────────────────────────────────────────
+// Added an optional limit parameter to handle listRuns(50) perfectly
+export const listRuns = async (limit?: number) => {
+  const url = limit ? `${API_URL}/api/v1/runs?limit=${limit}` : `${API_URL}/api/v1/runs`;
+  const res = await axios.get(url);
+  return res.data;
+};
 
-export async function startRun(req: StartRunRequest): Promise<RunStartResponse> {
-  const { data } = await apiClient.post<RunStartResponse>('/api/v1/runs', req);
-  return data;
-}
+export const getRunDetails = async (runId: string) => {
+  const res = await axios.get(`${API_URL}/api/v1/runs/${runId}`);
+  return res.data;
+};
 
-export async function listRuns(limit = 20): Promise<RunListItem[]> {
-  const { data } = await apiClient.get<RunListItem[]>('/api/v1/runs', {
-    params: { limit },
-  });
-  return data;
-}
+export const getAFEStats = async () => {
+  const res = await axios.get(`${API_URL}/api/v1/afe/stats`);
+  return res.data;
+};
 
-export async function getRun(runId: string): Promise<RunDetail> {
-  const { data } = await apiClient.get<RunDetail>(`/api/v1/runs/${runId}`);
-  return data;
-}
+export const submitFeedback = async (data: { run_id: string; pr_number: number; outcome: string; ml_patterns: string[] }) => {
+  const res = await axios.post(`${API_URL}/api/v1/feedback`, data);
+  return res.data;
+};
 
-export async function cancelRun(runId: string): Promise<void> {
-  await apiClient.delete(`/api/v1/runs/${runId}`);
-}
+export const cancelRun = async (runId: string) => {
+  const res = await axios.delete(`${API_URL}/api/v1/runs/${runId}`);
+  return res.data;
+};
 
-export function getReportUrl(runId: string): string {
-  return `${API_URL}/api/v1/runs/${runId}/report`;
-}
-
-// ── AFE ─────────────────────────────────────────────────────────────────────
-
-export async function getAFEStats(): Promise<AFEStats> {
-  const { data } = await apiClient.get<AFEStats>('/api/v1/afe/stats');
-  return data;
-}
-
-export async function submitFeedback(payload: {
-  run_id: string;
-  pr_number: number;
-  outcome: 'MERGED' | 'MODIFIED' | 'CLOSED';
-  ml_patterns?: string[];
-  human_modifications?: string;
-}): Promise<void> {
-  await apiClient.post('/api/v1/feedback', payload);
-}
-
-// ── Health ──────────────────────────────────────────────────────────────────
-
-export async function getHealth() {
-  const { data } = await apiClient.get('/api/v1/health');
-  return data;
-}
+export const getHealth = async () => {
+  const res = await axios.get(`${API_URL}/api/v1/health`);
+  return res.data;
+};
