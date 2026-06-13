@@ -48,7 +48,11 @@ ML_PATTERNS: Dict[str, Dict] = {
         "research_impact": 9.0,
         "cvss": 7.0,
         "patterns": [
+<<<<<<< HEAD
             r"fit_transform\s*\(.*X\b",  # fit_transform on full X
+=======
+            r"fit_transform\s*\(.*X\b",
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
             r"StandardScaler\(\)\.fit",
             r"MinMaxScaler\(\)\.fit",
             r"LabelEncoder\(\)\.fit",
@@ -62,7 +66,11 @@ ML_PATTERNS: Dict[str, Dict] = {
         "research_impact": 8.5,
         "cvss": 5.0,
         "patterns": [
+<<<<<<< HEAD
             r"train_test_split\s*\(",  # no random_state
+=======
+            r"train_test_split\s*\(",
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
             r"KFold\s*\(",
             r"RandomForest",
             r"np\.random\.",
@@ -244,25 +252,37 @@ class CodeAnalysisAgent(BaseAgent):
 
         state = self._emit_progress(state, "Running code analysis (ML patterns + standard bugs)...")
 
+<<<<<<< HEAD
         # Analyse files concurrently (batch by importance)
+=======
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
         python_files = [
             f for f in file_manifest
             if f["language"] == "Python"
             and not _is_test_file(f["relative_path"])
         ]
 
+<<<<<<< HEAD
         # Sort by importance descending — analyse most important files first
+=======
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
         python_files.sort(
             key=lambda f: module_importance.get(f["relative_path"], 0),
             reverse=True,
         )
 
+<<<<<<< HEAD
         # Cap at 50 most important files to manage Groq token usage
+=======
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
         files_to_analyse = python_files[:50]
 
         all_issues: List[Dict] = []
 
+<<<<<<< HEAD
         # Run AST analysis on all files (fast, no API calls)
+=======
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
         for file_info in files_to_analyse:
             full_path = Path(repo_path) / file_info["relative_path"]
             try:
@@ -272,7 +292,10 @@ class CodeAnalysisAgent(BaseAgent):
             except Exception as exc:
                 logger.warning("ast_analysis_failed", file=file_info["relative_path"], error=str(exc))
 
+<<<<<<< HEAD
         # Run regex-based ML pattern detection on all files
+=======
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
         for file_info in files_to_analyse:
             full_path = Path(repo_path) / file_info["relative_path"]
             try:
@@ -282,14 +305,21 @@ class CodeAnalysisAgent(BaseAgent):
             except Exception as exc:
                 logger.warning("regex_analysis_failed", file=file_info["relative_path"], error=str(exc))
 
+<<<<<<< HEAD
         # Run Groq semantic analysis on top 10 most important files
+=======
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
         groq_tasks = []
         for file_info in files_to_analyse[:10]:
             full_path = Path(repo_path) / file_info["relative_path"]
             try:
                 source = full_path.read_text(errors="ignore")
                 if len(source) > 8000:
+<<<<<<< HEAD
                     source = source[:8000]  # cap for token limits
+=======
+                    source = source[:8000]
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
                 groq_tasks.append(
                     self._groq_analyse_file(source, file_info["relative_path"])
                 )
@@ -302,7 +332,10 @@ class CodeAnalysisAgent(BaseAgent):
                 if isinstance(result, list):
                     all_issues.extend(result)
 
+<<<<<<< HEAD
         # Deduplicate and enrich with IDs
+=======
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
         seen = set()
         unique_issues = []
         for issue in all_issues:
@@ -343,7 +376,10 @@ class CodeAnalysisAgent(BaseAgent):
             for regex in pattern_def["patterns"]:
                 for line_no, line in enumerate(lines, start=1):
                     if re.search(regex, line):
+<<<<<<< HEAD
                         # Check if this is a genuine issue (not commented out)
+=======
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
                         stripped = line.strip()
                         if stripped.startswith("#"):
                             continue
@@ -362,7 +398,11 @@ class CodeAnalysisAgent(BaseAgent):
                             "research_impact_score": pattern_def["research_impact"],
                             "detection_tool": "regex_pattern",
                         })
+<<<<<<< HEAD
                         break  # one issue per pattern per file
+=======
+                        break
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
 
         return issues
 
@@ -459,7 +499,11 @@ class MLBugVisitor(ast.NodeVisitor):
         func_name = _get_call_name(node)
 
         # Check: train_test_split without random_state
+<<<<<<< HEAD
         if func_name in ("train_test_split",):
+=======
+        if func_name == "train_test_split":
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
             has_random_state = any(
                 (isinstance(kw.arg, str) and kw.arg == "random_state")
                 for kw in node.keywords
@@ -484,7 +528,11 @@ class MLBugVisitor(ast.NodeVisitor):
                 })
 
         # Check: fit_transform on full dataset (data leakage)
+<<<<<<< HEAD
         if func_name in ("fit_transform",):
+=======
+        if func_name == "fit_transform":
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
             self.issues.append({
                 "file_path": self.file_path,
                 "title": "Potential Data Leakage via fit_transform",
@@ -504,6 +552,53 @@ class MLBugVisitor(ast.NodeVisitor):
                 "detection_tool": "ast_visitor",
             })
 
+<<<<<<< HEAD
+=======
+        # Check: train/test contamination — X_test.fit() or similar
+        if func_name == "fit" and isinstance(node.func, ast.Attribute):
+            obj = node.func.value
+            if isinstance(obj, ast.Name) and "test" in obj.id.lower():
+                self.issues.append({
+                    "file_path": self.file_path,
+                    "title": "Train/Test Data Contamination",
+                    "description": (
+                        f"'{obj.id}.fit()' — fitting on test data leaks test "
+                        "distribution into the model. Fit on training data only."
+                    ),
+                    "issue_type": IssueType.ML_BUG,
+                    "severity": IssueSeverity.CRITICAL,
+                    "ml_pattern": "train_test_contamination",
+                    "line_start": node.lineno,
+                    "line_end": node.lineno,
+                    "code_snippet": self._get_line(node.lineno),
+                    "cvss_score": 9.0,
+                    "research_impact_score": 10.0,
+                    "detection_tool": "ast_visitor",
+                })
+
+        # Check: KFold without shuffle — wrong CV strategy
+        if func_name == "KFold":
+            has_shuffle = any(kw.arg == "shuffle" for kw in node.keywords)
+            if not has_shuffle:
+                self.issues.append({
+                    "file_path": self.file_path,
+                    "title": "KFold Without Shuffle — Possible Wrong CV Strategy",
+                    "description": (
+                        "KFold used without shuffle=True. For time-series data "
+                        "this leaks future data into past folds."
+                    ),
+                    "issue_type": IssueType.ML_BUG,
+                    "severity": IssueSeverity.HIGH,
+                    "ml_pattern": "wrong_cv_strategy",
+                    "line_start": node.lineno,
+                    "line_end": node.lineno,
+                    "code_snippet": self._get_line(node.lineno),
+                    "cvss_score": 6.5,
+                    "research_impact_score": 8.5,
+                    "detection_tool": "ast_visitor",
+                })
+
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
         self.generic_visit(node)
 
     def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
@@ -545,4 +640,8 @@ def _get_call_name(node: ast.Call) -> str:
 
 def _is_test_file(path: str) -> bool:
     name = Path(path).name
+<<<<<<< HEAD
     return name.startswith("test_") or name.endswith("_test.py") or "/tests/" in path
+=======
+    return name.startswith("test_") or name.endswith("_test.py") or "/tests/" in path
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0

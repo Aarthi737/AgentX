@@ -53,6 +53,7 @@ function PatchCard({ patch, issue }: { patch: Patch; issue?: Issue }) {
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {issue?.severity && <SeverityBadge severity={issue.severity} />}
+<<<<<<< HEAD
           {patch.safe_to_merge === true && (
             <span title="Safe to merge">
               <CheckCircle size={14} className="text-green-400" />
@@ -63,6 +64,10 @@ function PatchCard({ patch, issue }: { patch: Patch; issue?: Issue }) {
               <AlertTriangle size={14} className="text-amber-400" />
             </span>
           )}
+=======
+          {patch.safe_to_merge === true && <CheckCircle size={14} className="text-green-400" title="Safe to merge" />}
+          {patch.safe_to_merge === false && <AlertTriangle size={14} className="text-amber-400" title="Review required" />}
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
         </div>
       </div>
 

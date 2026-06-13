@@ -4,8 +4,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { GitBranch, Play, ExternalLink, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+<<<<<<< HEAD
 import { startRun, listRuns } from '../lib/api';
 import { useRunStore } from '../store/runStore';
+=======
+import { startRun, listRuns } from '@/lib/api';
+import { useRunStore } from '@/store/runStore';
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
 import type { RunListItem } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { PipelineProgress } from '@/components/agents/PipelineProgress';

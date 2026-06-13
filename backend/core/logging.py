@@ -40,7 +40,11 @@ def configure_logging() -> None:
         processors=processors,
         wrapper_class=structlog.make_filtering_bound_logger(log_level),
         context_class=dict,
+<<<<<<< HEAD
         logger_factory=structlog.PrintLoggerFactory(),
+=======
+        logger_factory=structlog.stdlib.LoggerFactory(),
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
         cache_logger_on_first_use=True,
     )
 

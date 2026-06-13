@@ -21,6 +21,10 @@
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.3.0",
     "@radix-ui/react-dialog": "^1.0.5",
+<<<<<<< HEAD
+=======
+    "@radix-ui/react-badge": "^1.0.0",
+>>>>>>> a2b603800cba3f35760fac54997e9638ad2f48e0
     "@radix-ui/react-tabs": "^1.0.4",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@radix-ui/react-progress": "^1.0.3",
