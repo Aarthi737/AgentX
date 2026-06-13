@@ -355,7 +355,7 @@ class AuditLog(Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False)  # SUCCESS / FAILURE / WARNING
     message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     duration_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    metadata: Mapped[Optional[Dict]] = mapped_column(JSON, nullable=True)
+    audit_metadata: Mapped[Optional[Dict]] = mapped_column(JSON, nullable=True)
     extra_metadata: Mapped[Optional[Dict]] = mapped_column(JSON, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
