@@ -81,7 +81,7 @@ websockets
 
 # --- LangChain / LangGraph ---
 langchain
-langchain-core
+langchain-core>=0.2.7,<0.3.0
 langchain-groq
 langgraph
 
