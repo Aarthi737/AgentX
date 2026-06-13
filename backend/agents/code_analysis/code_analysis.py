@@ -48,11 +48,7 @@ ML_PATTERNS: Dict[str, Dict] = {
         "research_impact": 9.0,
         "cvss": 7.0,
         "patterns": [
-
-            r"fit_transform\s*\(.*X\b",  # fit_transform on full X
-
             r"fit_transform\s*\(.*X\b",
-
             r"StandardScaler\(\)\.fit",
             r"MinMaxScaler\(\)\.fit",
             r"LabelEncoder\(\)\.fit",
@@ -66,7 +62,6 @@ ML_PATTERNS: Dict[str, Dict] = {
         "research_impact": 8.5,
         "cvss": 5.0,
         "patterns": [
-            r"train_test_split\s*\(",  # no random_state
             r"train_test_split\s*\(",
             r"KFold\s*\(",
             r"RandomForest",
@@ -255,17 +250,14 @@ class CodeAnalysisAgent(BaseAgent):
             and not _is_test_file(f["relative_path"])
         ]
 
-
         python_files.sort(
             key=lambda f: module_importance.get(f["relative_path"], 0),
             reverse=True,
         )
 
-
         files_to_analyse = python_files[:50]
 
         all_issues: List[Dict] = []
-
 
         for file_info in files_to_analyse:
             full_path = Path(repo_path) / file_info["relative_path"]
@@ -276,7 +268,6 @@ class CodeAnalysisAgent(BaseAgent):
             except Exception as exc:
                 logger.warning("ast_analysis_failed", file=file_info["relative_path"], error=str(exc))
 
-
         for file_info in files_to_analyse:
             full_path = Path(repo_path) / file_info["relative_path"]
             try:
@@ -286,18 +277,13 @@ class CodeAnalysisAgent(BaseAgent):
             except Exception as exc:
                 logger.warning("regex_analysis_failed", file=file_info["relative_path"], error=str(exc))
 
-
         groq_tasks = []
         for file_info in files_to_analyse[:10]:
             full_path = Path(repo_path) / file_info["relative_path"]
             try:
                 source = full_path.read_text(errors="ignore")
                 if len(source) > 8000:
-
-                    source = source[:8000]  # cap for token limits
-
                     source = source[:8000]
-
                 groq_tasks.append(
                     self._groq_analyse_file(source, file_info["relative_path"])
                 )
@@ -309,7 +295,6 @@ class CodeAnalysisAgent(BaseAgent):
             for result in groq_results:
                 if isinstance(result, list):
                     all_issues.extend(result)
-
 
         seen = set()
         unique_issues = []
@@ -351,7 +336,6 @@ class CodeAnalysisAgent(BaseAgent):
             for regex in pattern_def["patterns"]:
                 for line_no, line in enumerate(lines, start=1):
                     if re.search(regex, line):
-
                         stripped = line.strip()
                         if stripped.startswith("#"):
                             continue
@@ -370,11 +354,7 @@ class CodeAnalysisAgent(BaseAgent):
                             "research_impact_score": pattern_def["research_impact"],
                             "detection_tool": "regex_pattern",
                         })
-
-                        break  # one issue per pattern per file
-
-                       break
-
+                        break
 
         return issues
 
@@ -471,8 +451,6 @@ class MLBugVisitor(ast.NodeVisitor):
         func_name = _get_call_name(node)
 
         # Check: train_test_split without random_state
-
-        if func_name in ("train_test_split",):
         if func_name == "train_test_split":
             has_random_state = any(
                 (isinstance(kw.arg, str) and kw.arg == "random_state")
@@ -497,8 +475,7 @@ class MLBugVisitor(ast.NodeVisitor):
                     "detection_tool": "ast_visitor",
                 })
 
-        
-        if func_name in ("fit_transform",):
+        # Check: fit_transform on full dataset (data leakage)
         if func_name == "fit_transform":
             self.issues.append({
                 "file_path": self.file_path,
@@ -519,7 +496,7 @@ class MLBugVisitor(ast.NodeVisitor):
                 "detection_tool": "ast_visitor",
             })
 
-
+        # Check: train/test contamination — X_test.fit() or similar
         if func_name == "fit" and isinstance(node.func, ast.Attribute):
             obj = node.func.value
             if isinstance(obj, ast.Name) and "test" in obj.id.lower():
@@ -605,5 +582,3 @@ def _get_call_name(node: ast.Call) -> str:
 def _is_test_file(path: str) -> bool:
     name = Path(path).name
     return name.startswith("test_") or name.endswith("_test.py") or "/tests/" in path
-    return name.startswith("test_") or name.endswith("_test.py") or "/tests/" in path
-
