@@ -218,7 +218,7 @@ class Issue(Base):
     detection_tool: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Extra structured data
-    metadata: Mapped[Optional[Dict]] = mapped_column(JSON, nullable=True)
+    issue_metadata: Mapped[Optional[Dict]] = mapped_column(JSON, nullable=True)
     extra_metadata: Mapped[Optional[Dict]] = mapped_column(JSON, nullable=True)
 
 
