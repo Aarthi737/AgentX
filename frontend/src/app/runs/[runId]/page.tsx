@@ -9,6 +9,7 @@ export default function RunDetail() {
   const { runId } = useParams();
   const [run, setRun] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (runId) fetchDetails();
@@ -16,17 +17,37 @@ export default function RunDetail() {
 
   const fetchDetails = async () => {
     try {
+      setError(null);
       const data = await getRunDetails(runId as string);
+      if (!data) throw new Error('No data returned from API');
       setRun(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err.message || 'Failed to load pipeline');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <div className="text-center py-24 text-gray-400 flex flex-col justify-center items-center gap-3"><RefreshCw className="w-8 h-8 animate-spin text-indigo-500" /> Analyzing pipeline logs...</div>;
-  if (!run) return <div className="text-center py-24 text-rose-400"><AlertCircle className="mx-auto w-12 h-12 mb-2" /> Execution pipeline not found.</div>;
+  if (loading) return (
+    <div className="text-center py-24 text-gray-400 flex flex-col justify-center items-center gap-3">
+      <RefreshCw className="w-8 h-8 animate-spin text-indigo-500" /> 
+      Analyzing pipeline logs...
+    </div>
+  );
+
+  if (error || !run) return (
+    <div className="text-center py-24 text-rose-400 flex flex-col items-center gap-4">
+      <AlertCircle className="mx-auto w-12 h-12 mb-2" />
+      <p>{error || 'Execution pipeline not found.'}</p>
+      <button
+        onClick={fetchDetails}
+        className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-500"
+      >
+        Retry
+      </button>
+    </div>
+  );
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 text-gray-200">
