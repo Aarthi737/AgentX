@@ -6,23 +6,35 @@ import { GitPullRequest, ShieldAlert, CheckCircle, AlertCircle, RefreshCw } from
 import { getRunDetails } from '@/lib/api';
 
 export default function RunDetail() {
-  const { runId } = useParams();
+  // NEXT.JS APP ROUTER [ID] FOLDER FIX: 
+  // Folder name '[id]' nu irundha useParams-la irundhu 'id' thaan varum. 
+  // Athai 'runId' nu destructure panni rename pannikrom.
+  const { id: runId } = useParams();
+  
   const [run, setRun] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (runId) fetchDetails();
+    if (runId) {
+      fetchDetails();
+    }
   }, [runId]);
 
   const fetchDetails = async () => {
     try {
       setError(null);
+      setLoading(true);
+      
+      // Exact string-ah convert panni API helper-ku anupuroam
       const data = await getRunDetails(runId as string);
-      if (!data) throw new Error('No data returned from API');
+      
+      if (!data) {
+        throw new Error('No data returned from API');
+      }
       setRun(data);
     } catch (err: any) {
-      console.error(err);
+      console.error("Pipeline Fetch Error:", err);
       setError(err.message || 'Failed to load pipeline');
     } finally {
       setLoading(false);
@@ -42,7 +54,7 @@ export default function RunDetail() {
       <p>{error || 'Execution pipeline not found.'}</p>
       <button
         onClick={fetchDetails}
-        className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-500"
+        className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-500 transition-colors"
       >
         Retry
       </button>
@@ -51,17 +63,36 @@ export default function RunDetail() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 text-gray-200">
+      {/* Run Header Info */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 flex justify-between items-start shadow-xl">
         <div className="space-y-1">
-          <span className="text-xs font-mono text-indigo-400 bg-indigo-950/40 px-2 py-1 rounded border border-indigo-900">RUN_ID: {runId}</span>
-          <h1 className="text-xl font-bold text-white mt-2 truncate max-w-xl">{run.repo_url}</h1>
-          <p className="text-xs text-gray-400">Target Pipeline Branch: <span className="font-mono text-gray-200">{run.branch}</span></p>
+          <span className="text-xs font-mono text-indigo-400 bg-indigo-950/40 px-2 py-1 rounded border border-indigo-900">
+            RUN_ID: {runId}
+          </span>
+          <h1 className="text-xl font-bold text-white mt-2 truncate max-w-xl">
+            {run.repo_url || 'Unknown Repository'}
+          </h1>
+          <p className="text-xs text-gray-400">
+            Target Pipeline Branch: <span className="font-mono text-gray-200">{run.branch || 'main'}</span>
+          </p>
         </div>
-        <span className={`text-xs px-3 py-1.5 rounded-full font-medium border ${run.status === 'PR_CREATED' ? 'bg-emerald-950/50 text-emerald-400 border-emerald-900' : 'bg-amber-950/50 text-amber-400 border-amber-900'}`}>{run.status}</span>
+        <span className={`text-xs px-3 py-1.5 rounded-full font-medium border ${
+          run.status === 'PR_CREATED' 
+            ? 'bg-emerald-950/50 text-emerald-400 border-emerald-900' 
+            : 'bg-amber-950/50 text-amber-400 border-amber-900'
+        }`}>
+          {run.status}
+        </span>
       </div>
 
+      {/* Pull Request Link */}
       {run.pr_url && (
-        <a href={run.pr_url} target="_blank" rel="noreferrer" className="flex items-center justify-between bg-gradient-to-r from-emerald-950/30 to-teal-950/20 border border-emerald-900 rounded-xl p-4 text-emerald-400 hover:opacity-90 transition-all shadow-md group">
+        <a 
+          href={run.pr_url} 
+          target="_blank" 
+          rel="noreferrer" 
+          className="flex items-center justify-between bg-gradient-to-r from-emerald-950/30 to-teal-950/20 border border-emerald-900 rounded-xl p-4 text-emerald-400 hover:opacity-90 transition-all shadow-md group"
+        >
           <div className="flex items-center gap-3">
             <GitPullRequest className="w-5 h-5 text-emerald-400" />
             <div>
@@ -69,49 +100,74 @@ export default function RunDetail() {
               <div className="text-xs text-emerald-500/80">Click to view context-aware patches on GitHub</div>
             </div>
           </div>
-          <span className="text-xs bg-emerald-900/50 px-3 py-1 rounded-lg border border-emerald-700 text-white group-hover:scale-105 transition-all">View PR</span>
+          <span className="text-xs bg-emerald-900/50 px-3 py-1 rounded-lg border border-emerald-700 text-white group-hover:scale-105 transition-all">
+            View PR
+          </span>
         </a>
       )}
 
+      {/* Grid Content: Issues & Patches */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Left Column: Vulnerabilities */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4 shadow-md">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2"><ShieldAlert className="w-4 h-4 text-rose-400" /> Detected Core Vulnerabilities</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-rose-400" /> Detected Core Vulnerabilities
+          </h2>
           <div className="space-y-3">
             {(!run.issues || run.issues.length === 0) ? (
-              <div className="text-sm text-gray-500 py-4 text-center border border-dashed border-gray-800 rounded-lg">No security or logical discrepancies found.</div>
+              <div className="text-sm text-gray-500 py-4 text-center border border-dashed border-gray-800 rounded-lg">
+                No security or logical discrepancies found.
+              </div>
             ) : (
               run.issues.map((issue: any, index: number) => (
                 <div key={index} className="border border-gray-800 rounded-xl p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="font-medium text-white text-sm">{issue?.title || 'Fix'}</div>
+                      <div className="font-medium text-white text-sm">{issue?.title || 'Security Issue'}</div>
                       <div className="text-xs text-gray-400 font-mono mt-0.5">{issue?.file_path}</div>
                     </div>
-                    <span className="text-xs px-2 py-0.5 bg-rose-950/40 text-rose-400 border border-rose-900/50 rounded-full font-mono">{issue?.severity || 'HIGH'}</span>
+                    <span className="text-xs px-2 py-0.5 bg-rose-950/40 text-rose-400 border border-rose-900/50 rounded-full font-mono">
+                      {issue?.severity || 'HIGH'}
+                    </span>
                   </div>
-                  <p className="text-xs text-gray-400 line-clamp-2 bg-black/40 p-2 rounded border border-gray-950">{issue?.description}</p>
+                  <p className="text-xs text-gray-400 line-clamp-2 bg-black/40 p-2 rounded border border-gray-950">
+                    {issue?.description}
+                  </p>
                 </div>
               ))
             )}
           </div>
         </div>
 
+        {/* Right Column: Orchestration Patches */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4 shadow-md">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Orchestration Patches</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-emerald-400" /> Orchestration Patches
+          </h2>
           <div className="space-y-3">
             {(!run.patches || run.patches.length === 0) ? (
-              <div className="text-sm text-gray-500 py-4 text-center border border-dashed border-gray-800 rounded-lg">No verified patches compiled yet.</div>
+              <div className="text-sm text-gray-500 py-4 text-center border border-dashed border-gray-800 rounded-lg">
+                No verified patches compiled yet.
+              </div>
             ) : (
               run.patches.map((patch: any, index: number) => (
                 <div key={index} className="bg-black/30 border border-gray-800 rounded-xl p-4 space-y-2 font-mono text-xs">
-                  <div className="text-indigo-400 font-semibold border-b border-gray-800 pb-1 mb-2">Patch #{index + 1}</div>
-                  <div className="text-gray-400 truncate"><span className="text-gray-500">Target File:</span> {patch?.file_path}</div>
-                  <pre className="text-[11px] bg-black/60 p-3 rounded-lg overflow-x-auto text-emerald-400 border border-gray-950 mt-2 max-h-40">{patch?.patch_code || patch?.code_diff}</pre>
+                  <div className="text-indigo-400 font-semibold border-b border-gray-800 pb-1 mb-2">
+                    Patch #{index + 1}
+                  </div>
+                  <div className="text-gray-400 truncate">
+                    <span className="text-gray-500">Target File:</span> {patch?.file_path}
+                  </div>
+                  <pre className="text-[11px] bg-black/60 p-3 rounded-lg overflow-x-auto text-emerald-400 border border-gray-950 mt-2 max-h-40">
+                    {patch?.patch_code || patch?.code_diff}
+                  </pre>
                 </div>
               ))
             )}
           </div>
         </div>
+
       </div>
     </div>
   );
