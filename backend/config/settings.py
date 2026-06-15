@@ -37,6 +37,7 @@ class Settings(BaseSettings):
 
     # ── Groq ─────────────────────────────────────────────────────────────────
     groq_api_key: str = Field(default="")
+    gemini_api_key: str = Field(default="")
     groq_model: str = Field(default="llama-3.3-70b-versatile")
     groq_max_tokens: int = Field(default=4096)
     groq_temperature: float = Field(default=0.1)
