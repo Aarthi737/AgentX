@@ -2,60 +2,67 @@
 
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { GitPullRequest, ShieldAlert, CheckCircle, AlertCircle } from 'lucide-react';
+import { GitPullRequest, ShieldAlert, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { getRunDetails } from '@/lib/api';
 
 export default function RunDetail() {
   const params = useParams();
   
-  // Try matching both case styles just to be 100% safe
-  const runId = (params?.runId || params?.runid || '32a2dc50') as string;
+  // URL-ல் இருந்து வரும் உண்மையான runId-ஐ எடுக்கிறோம்
+  const runId = (params?.runId || params?.runid) as string;
   
-  // 1. Force loading to be FALSE instantly so it never spins
-  const [run, setRun] = useState<any>({
-    repo_url: "https://github.com/ASTRA-Lab/AgentX-Hackathon",
-    branch: "main",
-    status: "PR_CREATED",
-    pr_url: "https://github.com/ASTRA-Lab/AgentX-Hackathon/pull/1",
-    issues: [
-      {
-        title: "Broken Authentication & Token Exposure",
-        file_path: "src/auth/session.ts",
-        severity: "CRITICAL",
-        description: "JWT secret key is exposed in plaintext config leading to horizontal privilege escalation."
-      }
-    ],
-    patches: [
-      {
-        file_path: "src/auth/session.ts",
-        patch_code: "const secret = process.env.JWT_SECRET;\n// Replaced plaintext hardcoded key with environment variable"
-      }
-    ]
-  });
-  const [loading, setLoading] = useState(false);
+  // ஆரம்பத்தில் எந்த போலி தரவும் இல்லாமல் null மற்றும் loading-ஐ true என வைக்கிறோம்
+  const [run, setRun] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (runId && runId !== '32a2dc50') {
+    if (runId) {
       fetchDetails();
+    } else {
+      setError("Run ID is missing in the URL.");
+      setLoading(false);
     }
   }, [runId]);
 
   const fetchDetails = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const data = await getRunDetails(runId);
       if (data) {
         setRun(data);
+      } else {
+        setError('No data received for this run pipeline.');
       }
     } catch (err: any) {
       console.error("Pipeline Fetch Error:", err);
+      setError(err?.message || 'Failed to fetch execution pipeline details.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Loading Screen UI
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400 gap-3">
+      <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+      <p className="text-sm font-medium">Fetching dynamic pipeline data from Gemini...</p>
+    </div>
+  );
+
+  // Error Screen UI
   if (error) return (
     <div className="text-center py-24 text-rose-400 flex flex-col items-center gap-4">
       <AlertCircle className="mx-auto w-12 h-12 mb-2" />
-      <p>{error || 'Execution pipeline not found.'}</p>
+      <p className="font-medium">{error}</p>
+    </div>
+  );
+
+  // No Data Screen UI
+  if (!run) return (
+    <div className="text-center py-24 text-gray-500">
+      <p>No pipeline execution details found for ID: {runId}</p>
     </div>
   );
 
@@ -79,12 +86,12 @@ export default function RunDetail() {
             ? 'bg-emerald-950/50 text-emerald-400 border-emerald-900' 
             : 'bg-amber-950/50 text-amber-400 border-amber-900'
         }`}>
-          {run.status}
+          {run.status || 'PROCESSING'}
         </span>
       </div>
 
-      {/* Pull Request Link */}
-      {run.pr_url && (
+      {/* Pull Request Link (Gemini-ல் இருந்து வரும் நிஜமான லிங்க்) */}
+      {run.pr_url ? (
         <a 
           href={run.pr_url} 
           target="_blank" 
@@ -95,13 +102,18 @@ export default function RunDetail() {
             <GitPullRequest className="w-5 h-5 text-emerald-400" />
             <div>
               <div className="font-semibold text-sm text-white">Autonomous Pull Request Generated</div>
-              <div className="text-xs text-emerald-500/80">Click to view context-aware patches on GitHub</div>
+              <div className="text-xs text-emerald-500/80">{run.pr_url}</div>
             </div>
           </div>
           <span className="text-xs bg-emerald-900/50 px-3 py-1 rounded-lg border border-emerald-700 text-white group-hover:scale-105 transition-all">
-            View PR
+            View PR →
           </span>
         </a>
+      ) : (
+        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 text-gray-400 text-sm flex items-center gap-2">
+          <GitPullRequest className="w-5 h-5 text-gray-500" />
+          <span>Pull request URL is generating or not applicable. Status: <strong>{run.status}</strong></span>
+        </div>
       )}
 
       {/* Grid Content: Issues & Patches */}
@@ -114,8 +126,8 @@ export default function RunDetail() {
           </h2>
           <div className="space-y-3">
             {(!run.issues || run.issues.length === 0) ? (
-              <div className="text-sm text-gray-500 py-4 text-center border border-dashed border-gray-800 rounded-lg">
-                No security or logical discrepancies found.
+              <div className="text-sm text-gray-500 py-8 text-center border border-dashed border-gray-800 rounded-lg">
+                No security discrepancies found by Gemini.
               </div>
             ) : (
               run.issues.map((issue: any, index: number) => (
@@ -123,13 +135,13 @@ export default function RunDetail() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="font-medium text-white text-sm">{issue?.title || 'Security Issue'}</div>
-                      <div className="text-xs text-gray-400 font-mono mt-0.5">{issue?.file_path}</div>
+                      <div className="text-xs text-gray-400 font-mono mt-0.5 break-all">{issue?.file_path}</div>
                     </div>
-                    <span className="text-xs px-2 py-0.5 bg-rose-950/40 text-rose-400 border border-rose-900/50 rounded-full font-mono">
+                    <span className="text-xs px-2 py-0.5 bg-rose-950/40 text-rose-400 border border-rose-900/50 rounded-full font-mono shrink-0">
                       {issue?.severity || 'HIGH'}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 line-clamp-2 bg-black/40 p-2 rounded border border-gray-950">
+                  <p className="text-xs text-gray-400 bg-black/40 p-2 rounded border border-gray-950">
                     {issue?.description}
                   </p>
                 </div>
@@ -145,7 +157,7 @@ export default function RunDetail() {
           </h2>
           <div className="space-y-3">
             {(!run.patches || run.patches.length === 0) ? (
-              <div className="text-sm text-gray-500 py-4 text-center border border-dashed border-gray-800 rounded-lg">
+              <div className="text-sm text-gray-500 py-8 text-center border border-dashed border-gray-800 rounded-lg">
                 No verified patches compiled yet.
               </div>
             ) : (
