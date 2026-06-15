@@ -93,7 +93,6 @@ platformdirs==4.10.0
 pluggy==1.6.0
 postgrest==2.31.0
 propcache==0.5.2
-protobuf==6.33.6
 psycopg2-binary==2.9.12
 pyasn1==0.6.3
 pycparser==3.0
@@ -168,6 +167,5 @@ zstandard==0.25.0
 
 aiosqlite
 
-google-generativeai
 
 google-genai
