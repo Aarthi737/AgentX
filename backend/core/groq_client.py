@@ -12,7 +12,7 @@ import re
 import time
 from typing import Any, Dict, List, Optional
 
-from google import genai
+import google.generativeai as genai
 from google.genai import types
 
 from config.settings import settings
