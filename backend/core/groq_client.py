@@ -1,9 +1,7 @@
 """
-AgentX — Groq LLM Client
-Centralised client for all Groq Llama 3.3 70B calls.
-Features: structured retry with exponential backoff, token counting,
-rate-limit detection, prompt template rendering, JSON parsing.
-Used by: Agents 3, 4, 5, 6, 7, 8.
+AgentX — LLM Client (Gemini via google-genai)
+Drop-in replacement for the old Groq client.
+Same interface — no changes needed in agents.
 """
 
 from __future__ import annotations
@@ -14,34 +12,18 @@ import re
 import time
 from typing import Any, Dict, List, Optional
 
-import httpx
-from groq import AsyncGroq, RateLimitError
-from tenacity import (
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
+from google import genai
+from google.genai import types
 
 from config.settings import settings
 from core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Global async Groq client (initialised once)
-_groq_client: Optional[AsyncGroq] = None
-
-
-def get_groq_client() -> AsyncGroq:
-    global _groq_client
-    if _groq_client is None:
-        _groq_client = AsyncGroq(api_key=settings.groq_api_key)
-    return _groq_client
+GEMINI_MODEL = "gemini-2.0-flash"
 
 
 class GroqMessage:
-    """Helper to build message lists for Groq chat completions."""
-
     @staticmethod
     def system(content: str) -> Dict:
         return {"role": "system", "content": content}
@@ -56,23 +38,11 @@ class GroqMessage:
 
 
 class GroqClient:
-    """
-    Wrapper around AsyncGroq with retry, JSON extraction, and logging.
-    Instantiate once per agent or use the module-level singleton helpers.
-    """
-
     def __init__(self):
-        self.client = get_groq_client()
-        self.model = settings.groq_model
-        self.max_tokens = settings.groq_max_tokens
-        self.temperature = settings.groq_temperature
+        self.client = genai.Client(api_key=settings.gemini_api_key)
+        self.temperature = getattr(settings, 'groq_temperature', 0.1)
+        self.max_tokens = getattr(settings, 'groq_max_tokens', 2048)
 
-    @retry(
-        retry=retry_if_exception_type((RateLimitError, httpx.TimeoutException)),
-        wait=wait_exponential(multiplier=2, min=2, max=30),
-        stop=stop_after_attempt(settings.groq_max_retries),
-        reraise=True,
-    )
     async def complete(
         self,
         messages: List[Dict],
@@ -81,32 +51,33 @@ class GroqClient:
         max_tokens: Optional[int] = None,
         json_mode: bool = False,
     ) -> str:
-        """
-        Send a chat completion request to Groq.
-        Returns the text content of the first choice.
-        """
-        t_start = time.monotonic()
-        kwargs: Dict[str, Any] = {
-            "model": self.model,
-            "messages": messages,
-            "temperature": temperature if temperature is not None else self.temperature,
-            "max_tokens": max_tokens or self.max_tokens,
-        }
+        system_parts = [m["content"] for m in messages if m["role"] == "system"]
+        user_parts = [m["content"] for m in messages if m["role"] == "user"]
+
+        system_text = "\n".join(system_parts)
+        user_text = "\n".join(user_parts)
+
         if json_mode:
-            kwargs["response_format"] = {"type": "json_object"}
+            user_text += "\n\nRespond with ONLY a valid JSON object, no markdown, no explanation."
 
-        response = await self.client.chat.completions.create(**kwargs)
-        duration = (time.monotonic() - t_start) * 1000
+        full_prompt = f"{system_text}\n\n{user_text}" if system_text else user_text
 
-        content = response.choices[0].message.content or ""
-        logger.debug(
-            "groq_completion",
-            model=self.model,
-            input_tokens=response.usage.prompt_tokens,
-            output_tokens=response.usage.completion_tokens,
-            duration_ms=round(duration),
+        config = types.GenerateContentConfig(
+            temperature=temperature if temperature is not None else self.temperature,
+            max_output_tokens=max_tokens or self.max_tokens,
         )
-        return content
+
+        try:
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
+                model=GEMINI_MODEL,
+                contents=full_prompt,
+                config=config,
+            )
+            return response.text or ""
+        except Exception as exc:
+            logger.warning("gemini_completion_failed", error=str(exc))
+            raise
 
     async def complete_json(
         self,
@@ -115,10 +86,6 @@ class GroqClient:
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
     ) -> Dict:
-        """
-        Request JSON output from Groq and parse it.
-        Falls back to regex extraction if the model wraps JSON in markdown fences.
-        """
         raw = await self.complete(
             messages,
             temperature=temperature,
@@ -136,7 +103,6 @@ class GroqClient:
         max_tokens: Optional[int] = None,
         json_mode: bool = False,
     ) -> str:
-        """Convenience wrapper for system + user prompt pair."""
         messages = [
             GroqMessage.system(system_prompt),
             GroqMessage.user(user_prompt),
@@ -156,7 +122,6 @@ class GroqClient:
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
     ) -> Dict:
-        """System + user → parsed JSON dict."""
         messages = [
             GroqMessage.system(system_prompt),
             GroqMessage.user(user_prompt),
@@ -169,30 +134,25 @@ class GroqClient:
 
 
 def _parse_json_safe(text: str) -> Dict:
-    """Parse JSON from LLM output, handling markdown code fences."""
-    # Strip ```json ... ``` or ``` ... ``` wrappers
     cleaned = re.sub(r"^```(?:json)?\s*", "", text.strip(), flags=re.MULTILINE)
     cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
-        # Attempt to find JSON object/array within the text
         match = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", cleaned)
         if match:
             try:
                 return json.loads(match.group(1))
             except json.JSONDecodeError:
                 pass
-        logger.warning("groq_json_parse_failed", raw_text=text[:500])
+        logger.warning("gemini_json_parse_failed", raw_text=text[:500])
         return {"error": "json_parse_failed", "raw": text}
 
 
-# Module-level singleton
 _groq_client_instance: Optional[GroqClient] = None
 
 
 def get_groq() -> GroqClient:
-    """Return module-level GroqClient singleton."""
     global _groq_client_instance
     if _groq_client_instance is None:
         _groq_client_instance = GroqClient()

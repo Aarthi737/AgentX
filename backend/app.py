@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
 
     # Create tables if they don't exist (dev/test convenience)
     # In production, use Alembic migrations instead
-    if not settings.is_production:
+    if True:  # always create tables
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("dev_tables_created")

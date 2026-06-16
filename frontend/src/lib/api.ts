@@ -7,14 +7,18 @@ export const startRun = async (data: { repo_url: string; branch?: string; github
   return res.data;
 };
 
-// Added an optional limit parameter to handle listRuns(50) perfectly
+// Handles listRuns(50) perfectly
 export const listRuns = async (limit?: number) => {
   const url = limit ? `${API_URL}/api/v1/runs?limit=${limit}` : `${API_URL}/api/v1/runs`;
   const res = await axios.get(url);
   return res.data;
 };
 
+// SAFE GUARDED FIXED RUN DETAILS METHOD
 export const getRunDetails = async (runId: string) => {
+  if (!runId || runId === 'undefined') {
+    throw new Error('Run ID is missing or undefined in frontend routing.');
+  }
   const res = await axios.get(`${API_URL}/api/v1/runs/${runId}`);
   return res.data;
 };
