@@ -12,16 +12,14 @@ import re
 import time
 from typing import Any, Dict, List, Optional
 
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 
 from config.settings import settings
 from core.logging import get_logger
 
 logger = get_logger(__name__)
 
-GEMINI_MODEL = "gemini-2.0-flash"
-
+GEMINI_MODEL = "gemini-2.0-flash" 
 
 class GroqMessage:
     @staticmethod
