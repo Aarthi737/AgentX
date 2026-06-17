@@ -12,7 +12,7 @@ import re
 import time
 from typing import Any, Dict, List, Optional
 
-import google.generativeai as genai
+from google import genai
 from google.genai import types
 
 from config.settings import settings
@@ -39,7 +39,7 @@ class GroqMessage:
 
 class GroqClient:
     def __init__(self):
-        self.client = genai.Client(api_key=settings.gemini_api_key)
+        self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
         self.temperature = getattr(settings, 'groq_temperature', 0.1)
         self.max_tokens = getattr(settings, 'groq_max_tokens', 2048)
 
