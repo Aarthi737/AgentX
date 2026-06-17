@@ -1,7 +1,6 @@
 """
-AgentX — LLM Client (Gemini via google-genai)
-Drop-in replacement for the old Groq client.
-Same interface — no changes needed in agents.
+AgentX — LLM Client (Gemini via google-generativeai)
+Clean, stable implementation for Railway deployment.
 """
 
 from __future__ import annotations
@@ -9,7 +8,6 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-import time
 from typing import Any, Dict, List, Optional
 
 import google.generativeai as genai
@@ -19,8 +17,12 @@ from core.logging import get_logger
 
 logger = get_logger(__name__)
 
-GEMINI_MODEL = "gemini-2.0-flash" 
+GEMINI_MODEL = "gemini-1.5-flash"
 
+
+# ----------------------------
+# Message Helpers (Groq-style compatibility)
+# ----------------------------
 class GroqMessage:
     @staticmethod
     def system(content: str) -> Dict:
@@ -35,11 +37,17 @@ class GroqMessage:
         return {"role": "assistant", "content": content}
 
 
+# ----------------------------
+# Gemini Client Wrapper
+# ----------------------------
 class GroqClient:
     def __init__(self):
-        self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
-        self.temperature = getattr(settings, 'groq_temperature', 0.1)
-        self.max_tokens = getattr(settings, 'groq_max_tokens', 2048)
+        genai.configure(api_key=settings.GOOGLE_API_KEY)
+
+        self.temperature = getattr(settings, "groq_temperature", 0.1)
+        self.max_tokens = getattr(settings, "groq_max_tokens", 2048)
+
+        self.model = genai.GenerativeModel(GEMINI_MODEL)
 
     async def complete(
         self,
@@ -49,6 +57,7 @@ class GroqClient:
         max_tokens: Optional[int] = None,
         json_mode: bool = False,
     ) -> str:
+
         system_parts = [m["content"] for m in messages if m["role"] == "system"]
         user_parts = [m["content"] for m in messages if m["role"] == "user"]
 
@@ -56,23 +65,17 @@ class GroqClient:
         user_text = "\n".join(user_parts)
 
         if json_mode:
-            user_text += "\n\nRespond with ONLY a valid JSON object, no markdown, no explanation."
+            user_text += "\n\nRespond ONLY in valid JSON."
 
         full_prompt = f"{system_text}\n\n{user_text}" if system_text else user_text
 
-        config = types.GenerateContentConfig(
-            temperature=temperature if temperature is not None else self.temperature,
-            max_output_tokens=max_tokens or self.max_tokens,
-        )
-
         try:
             response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=GEMINI_MODEL,
-                contents=full_prompt,
-                config=config,
+                self.model.generate_content,
+                full_prompt
             )
-            return response.text or ""
+            return getattr(response, "text", "") or ""
+
         except Exception as exc:
             logger.warning("gemini_completion_failed", error=str(exc))
             raise
@@ -131,9 +134,13 @@ class GroqClient:
         )
 
 
+# ----------------------------
+# JSON Parser
+# ----------------------------
 def _parse_json_safe(text: str) -> Dict:
     cleaned = re.sub(r"^```(?:json)?\s*", "", text.strip(), flags=re.MULTILINE)
     cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
+
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
@@ -143,10 +150,14 @@ def _parse_json_safe(text: str) -> Dict:
                 return json.loads(match.group(1))
             except json.JSONDecodeError:
                 pass
+
         logger.warning("gemini_json_parse_failed", raw_text=text[:500])
         return {"error": "json_parse_failed", "raw": text}
 
 
+# ----------------------------
+# Singleton
+# ----------------------------
 _groq_client_instance: Optional[GroqClient] = None
 
 
