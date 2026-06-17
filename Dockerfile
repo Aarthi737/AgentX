@@ -9,8 +9,8 @@ FROM python:3.11-slim AS builder
 WORKDIR /build
 
 # Install build deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc g++ libpq-dev curl git \
+RUN apt-get update && apt-get install -y \
+    gcc g++ libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
@@ -22,10 +22,11 @@ FROM python:3.11-slim AS runtime
 
 WORKDIR /app
 
-# Install runtime system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 git curl docker.io \
+RUN apt-get update && apt-get install -y \
+    gcc g++ libpq-dev \
     && rm -rf /var/lib/apt/lists/*
+# Install runtime system dependencies
+
 
 # Copy installed packages from builder
 COPY --from=builder /install /usr/local

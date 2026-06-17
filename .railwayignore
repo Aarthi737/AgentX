@@ -1,6 +1,4 @@
-frontend/
-migrations/
-scripts/
-*.md
-*.log
+__pycache__/
+*.pyc
+.env
 .git
