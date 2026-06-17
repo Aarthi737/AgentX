@@ -18,8 +18,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
-import git
-from github import Github, GithubException, Repository
+from github import Github, GithubException
 
 from core.logging import get_logger
 
