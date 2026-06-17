@@ -1,0 +1,6 @@
+frontend/
+migrations/
+scripts/
+*.md
+*.log
+.git
