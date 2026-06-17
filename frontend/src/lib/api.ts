@@ -1,44 +1,81 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+/**
+ * AgentX API Client
+ * Production-ready (Vercel + Railway)
+ */
 
-export const startRun = async (data: { repo_url: string; branch?: string; github_token?: string }) => {
-  const res = await axios.post(`${API_URL}/api/v1/runs`, data);
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+  throw new Error(
+    "NEXT_PUBLIC_API_URL is not defined. Please set it in .env.local or Vercel environment variables."
+  );
+}
+
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// -------------------- RUNS --------------------
+
+export const startRun = async (data: {
+  repo_url: string;
+  branch?: string;
+  github_token?: string;
+}) => {
+  const res = await api.post('/api/v1/runs', data);
   return res.data;
 };
 
-// Handles listRuns(50) perfectly
 export const listRuns = async (limit?: number) => {
-  const url = limit ? `${API_URL}/api/v1/runs?limit=${limit}` : `${API_URL}/api/v1/runs`;
-  const res = await axios.get(url);
+  const res = await api.get('/api/v1/runs', {
+    params: limit ? { limit } : {},
+  });
   return res.data;
 };
 
-// SAFE GUARDED FIXED RUN DETAILS METHOD
 export const getRunDetails = async (runId: string) => {
   if (!runId || runId === 'undefined') {
-    throw new Error('Run ID is missing or undefined in frontend routing.');
+    throw new Error('Run ID is missing or undefined.');
   }
-  const res = await axios.get(`${API_URL}/api/v1/runs/${runId}`);
-  return res.data;
-};
 
-export const getAFEStats = async () => {
-  const res = await axios.get(`${API_URL}/api/v1/afe/stats`);
-  return res.data;
-};
-
-export const submitFeedback = async (data: { run_id: string; pr_number: number; outcome: string; ml_patterns: string[] }) => {
-  const res = await axios.post(`${API_URL}/api/v1/feedback`, data);
+  const res = await api.get(`/api/v1/runs/${runId}`);
   return res.data;
 };
 
 export const cancelRun = async (runId: string) => {
-  const res = await axios.delete(`${API_URL}/api/v1/runs/${runId}`);
+  const res = await api.delete(`/api/v1/runs/${runId}`);
   return res.data;
 };
 
-export const getHealth = async () => {
-  const res = await axios.get(`${API_URL}/api/v1/health`);
+// -------------------- AFE --------------------
+
+export const getAFEStats = async () => {
+  const res = await api.get('/api/v1/afe/stats');
   return res.data;
 };
+
+// -------------------- FEEDBACK --------------------
+
+export const submitFeedback = async (data: {
+  run_id: string;
+  pr_number: number;
+  outcome: string;
+  ml_patterns: string[];
+}) => {
+  const res = await api.post('/api/v1/feedback', data);
+  return res.data;
+};
+
+// -------------------- HEALTH --------------------
+
+export const getHealth = async () => {
+  const res = await api.get('/api/v1/health');
+  return res.data;
+};
+
+export default api;
