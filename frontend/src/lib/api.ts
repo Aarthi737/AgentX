@@ -5,13 +5,9 @@ import axios from 'axios';
  * Production-ready (Vercel + Railway)
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-if (!API_URL) {
-  throw new Error(
-    "NEXT_PUBLIC_API_URL is not defined. Please set it in .env.local or Vercel environment variables."
-  );
-}
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://agentx-production-6943.up.railway.app";
 
 const api = axios.create({
   baseURL: API_URL,
