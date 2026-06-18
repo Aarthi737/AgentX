@@ -44,9 +44,8 @@ class GroqClient:
     def __init__(self):
         genai.configure(api_key=settings.GOOGLE_API_KEY)
 
-        self.temperature = getattr(settings, "groq_temperature", 0.1)
-        self.max_tokens = getattr(settings, "groq_max_tokens", 2048)
-
+        self.temperature = getattr(settings, "google_temperature", 0.1)
+        self.max_tokens = getattr(settings, "google_max_tokens", 2048)
         self.model = genai.GenerativeModel(GEMINI_MODEL)
 
     async def complete(

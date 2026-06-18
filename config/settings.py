@@ -1,77 +1,50 @@
-"""
-AgentX — Core Configuration
-Centralised settings loaded from environment variables via Pydantic Settings.
-All modules import from here; never read os.environ directly.
-"""
-
-from functools import lru_cache
-from typing import List
-
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    # API
     GOOGLE_API_KEY: str = ""
 
     google_temperature: float = 0.1
     google_max_tokens: int = 2048
 
+    # Legacy compatibility
     groq_api_key: str = ""
     groq_temperature: float = 0.1
     groq_max_tokens: int = 2048
-    # ── Database ─────────────────────────────────────────
-    supabase_url: str = Field(default="")
-    supabase_anon_key: str = Field(default="")
-    supabase_service_role_key: str = Field(default="")
-    database_url: str = Field(default="sqlite+aiosqlite:///./test.db")
 
-    # ── GitHub ───────────────────────────────────────────
-    github_default_token: str = Field(default="")
+    # App
+    app_host: str = "0.0.0.0"
+    app_port: int = 8000
+    app_env: str = "development"
+    app_log_level: str = "INFO"
 
-    # ── Docker ───────────────────────────────────────────
-    docker_base_image: str = Field(default="python:3.11-slim")
-    docker_network: str = Field(default="agentx-net")
-    docker_timeout: int = Field(default=300)
-    docker_memory_limit: str = Field(default="512m")
-    docker_cpu_limit: float = Field(default=1.0)
+    # DB
+    database_url: str = "sqlite:///./app.db"
 
-    # ── Redis ────────────────────────────────────────────
-    redis_url: str = Field(default="redis://localhost:6379/0")
-
-    # ── Agent Behaviour ──────────────────────────────────
-    agent_max_parallel: int = Field(default=4)
-    validation_confidence_high: int = Field(default=90)
-    validation_confidence_medium: int = Field(default=70)
-    fix_max_retries: int = Field(default=3)
-    validation_max_rounds: int = Field(default=2)
+    # CORS
+    cors_origins: str = "*"
 
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
         extra="ignore",
+        case_sensitive=False,
     )
 
-    # ── Helpers ──────────────────────────────────────────
     @property
-    def cors_origins_list(self) -> List[str]:
-        return [
-            o.strip()
-            for o in self.app_cors_origins.split(",")
-            if o.strip()
-        ]
+    def is_production(self):
+        return self.app_env.lower() == "production"
 
     @property
-    def is_production(self) -> bool:
-        return self.app_env == "production"
+    def cors_origins_list(self):
+        if self.cors_origins == "*":
+            return ["*"]
+
+        return [x.strip() for x in self.cors_origins.split(",")]
 
 
-@lru_cache(maxsize=1)
-def get_settings() -> Settings:
-    """Return cached singleton Settings instance."""
+def get_settings():
     return Settings()
 
 
-# Module-level singleton
 settings = get_settings()
