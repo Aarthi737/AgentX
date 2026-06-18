@@ -15,7 +15,7 @@ export default function SettingsPage() {
     ? [
         { label: 'API Server', status: health.status === 'healthy', detail: health.status },
         { label: 'Database (Supabase)', status: health.database === 'ok', detail: health.database },
-        { label: 'Groq API', status: health.groq === 'ok', detail: health.groq },
+        { label: 'Gemini API', status: health.gemini === 'ok', detail: health.gemini },
         { label: 'Environment', status: true, detail: health.environment },
         { label: 'Version', status: true, detail: health.version },
       ]
@@ -62,7 +62,7 @@ export default function SettingsPage() {
         </p>
         <div className="space-y-2 font-mono text-xs">
           {[
-            ['GROQ_API_KEY', 'Groq API key (free tier: 14,400 req/day)'],
+            ['GOOGLE_API_KEY', 'Google Gemini API key (Gemini 2.5 Flash)'],
             ['SUPABASE_URL', 'Your Supabase project URL'],
             ['SUPABASE_SERVICE_ROLE_KEY', 'Supabase service role key'],
             ['DATABASE_URL', 'postgresql://... connection string'],
@@ -82,7 +82,7 @@ export default function SettingsPage() {
         <h2 className="font-semibold text-white mb-3">Technology Stack</h2>
         <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
           {[
-            ['LLM Engine', 'Groq Llama 3.3 70B · Free tier'],
+            ['LLM Engine', 'Google Gemini 2.5 Flash · Free tier'],
             ['Orchestration', 'LangGraph + LangChain'],
             ['Backend', 'FastAPI + Python 3.11'],
             ['Frontend', 'Next.js 14 + Tailwind CSS'],
