@@ -37,15 +37,15 @@ class GeminiMessage:
 
 class GeminiClient:
     def __init__(self):
-        api_key = (
-            getattr(settings, "GOOGLE_API_KEY", None)
-            or getattr(settings, "groq_api_key", None)
-            or os.environ.get("GROQ_API_KEY")
-        )
+        api_key = settings.GOOGLE_API_KEY
+
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY is missing")
+
         genai.configure(api_key=api_key)
 
-        self.temperature = getattr(settings, "groq_temperature", 0.1)
-        self.max_tokens = getattr(settings, "groq_max_tokens", 2048)
+        self.temperature = getattr(settings, "google_temperature", 0.1)
+        self.max_tokens = getattr(settings, "google_max_tokens", 2048)
 
         self.model = genai.GenerativeModel(GEMINI_MODEL)
 

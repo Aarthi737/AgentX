@@ -25,10 +25,9 @@ class Settings(BaseSettings):
     app_log_level: str = Field(default="INFO")
     app_cors_origins: str = Field(default="http://localhost:3000")
 
-    # ── Legacy Groq compatibility ──────────────────────────
-    groq_api_key: Optional[str] = None
-    groq_temperature: float = Field(default=0.1)
-    groq_max_tokens: int = Field(default=2048)
+    GOOGLE_API_KEY: Optional[str] = None
+    google_temperature: float = Field(default=0.1)
+    google_max_tokens: int = Field(default=2048)
 
     # ── Database ─────────────────────────────────────────
     supabase_url: str = Field(default="")

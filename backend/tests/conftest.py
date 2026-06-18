@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 # Set test environment before importing app modules
 os.environ.setdefault("APP_ENV", "test")
-os.environ.setdefault("GROQ_API_KEY", "test-key")
+os.environ.setdefault("GOOGLE_API_KEY", "test-key")
 os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
 os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
 os.environ.setdefault("SUPABASE_ANON_KEY", "test-anon-key")
