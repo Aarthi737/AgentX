@@ -10,7 +10,7 @@ Responsibilities:
 - Maximum 3 retries per issue
 - Confidence score per patch
 
-Tools: Groq Llama 3.3 70B, AST Parser, Pylint, Jinja2
+Tools: Gemini LLM, AST Parser, Pylint, Jinja2
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from typing import Dict, List, Optional, Tuple
 
 from config.settings import settings
 from core.base_agent import BaseAgent
-from core.groq_client import get_groq
+from core.gemini_client import get_gemini
 from core.logging import get_logger
 from core.state import AgentXState
 from db.database import get_db_session
@@ -85,7 +85,7 @@ class FixGeneratorAgent(BaseAgent):
 
     def __init__(self):
         super().__init__()
-        self.groq = get_groq()
+        self.gemini = get_gemini()
 
     async def execute(self, state: AgentXState) -> AgentXState:
         """Generate patches for all ranked issues with RCA context."""
@@ -109,7 +109,7 @@ class FixGeneratorAgent(BaseAgent):
 
         patches: List[Dict] = []
 
-        # Process in batches of 3 (respect Groq rate limits)
+        # Process in batches of 3 (respect Gemini rate limits)
         batch_size = 3
         for i in range(0, len(ranked_issues), batch_size):
             batch = ranked_issues[i : i + batch_size]
@@ -208,7 +208,7 @@ Original file content:
 Generate a corrected fix addressing the rejection feedback."""
 
         try:
-            result = await self.groq.complete_structured_json(
+            result = await self.gemini.complete_structured_json(
                 system_prompt=_FIX_RETRY_SYSTEM_PROMPT,
                 user_prompt=user_prompt,
                 max_tokens=3000,
@@ -228,7 +228,7 @@ Generate a corrected fix addressing the rejection feedback."""
         file_relationships: Dict,
         framework_metadata: Dict,
     ) -> Dict:
-        """Generate a single patch using Groq with full context."""
+        """Generate a single patch using Gemini with full context."""
         file_path = issue.get("file_path", "")
         file_content = _read_file_safe(repo_path, file_path)
 
@@ -278,13 +278,13 @@ Root Cause Analysis:
 Generate the complete corrected file."""
 
         try:
-            result = await self.groq.complete_structured_json(
+            result = await self.gemini.complete_structured_json(
                 system_prompt=_FIX_SYSTEM_PROMPT,
                 user_prompt=user_prompt,
                 max_tokens=3500,
             )
         except Exception as exc:
-            logger.warning("groq_fix_failed", file=file_path, error=str(exc))
+            logger.warning("gemini_fix_failed", file=file_path, error=str(exc))
             return _fallback_patch(issue, repo_path)
 
         return self._validate_and_enrich_patch(result, file_content, issue)

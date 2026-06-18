@@ -118,9 +118,9 @@ def sample_rca_reports(sample_issues):
 
 
 @pytest.fixture
-def mock_groq():
-    """Mock GroqClient for tests that don't need real LLM calls."""
-    with patch("core.groq_client.GroqClient") as mock_cls:
+def mock_gemini():
+    """Mock GeminiClient for tests that don't need real LLM calls."""
+    with patch("core.gemini_client.GeminiClient") as mock_cls:
         instance = AsyncMock()
         instance.complete.return_value = '{"issues": []}'
         instance.complete_json.return_value = {"issues": []}

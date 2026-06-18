@@ -1,11 +1,12 @@
 """
 AgentX — Core Configuration
+
 Centralised settings loaded from environment variables via Pydantic Settings.
 All modules import from here; never read os.environ directly.
 """
 
 from functools import lru_cache
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,6 +24,11 @@ class Settings(BaseSettings):
     app_port: int = Field(default=8000)
     app_log_level: str = Field(default="INFO")
     app_cors_origins: str = Field(default="http://localhost:3000")
+
+    # ── Legacy Groq compatibility ──────────────────────────
+    groq_api_key: Optional[str] = None
+    groq_temperature: float = Field(default=0.1)
+    groq_max_tokens: int = Field(default=2048)
 
     # ── Database ─────────────────────────────────────────
     supabase_url: str = Field(default="")

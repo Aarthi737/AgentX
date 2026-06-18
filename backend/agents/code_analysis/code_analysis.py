@@ -15,9 +15,9 @@ Responsibilities:
 - Detect standard bugs: null dereferences, off-by-one, resource leaks, etc.
 - Detect code smells
 - Apply module-importance-weighted severity scoring
-- Use AST for structural analysis + Groq LLM for semantic analysis
+- Use AST for structural analysis + Gemini LLM for semantic analysis
 
-Tools: AST, Pylint, ESLint, Groq Llama 3.3 70B
+Tools: AST, Pylint, ESLint, Gemini LLM
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from config.settings import settings
 from core.base_agent import BaseAgent
-from core.groq_client import GroqClient, GroqMessage, get_groq
+from core.gemini_client import get_gemini
 from core.logging import get_logger
 from core.state import AgentXState
 from db.models import IssueType, IssueSeverity
@@ -190,7 +190,7 @@ STANDARD_PATTERNS = [
     },
 ]
 
-# System prompt for Groq semantic analysis
+# System prompt for Gemini semantic analysis
 _CODE_ANALYSIS_SYSTEM_PROMPT = """You are an expert code reviewer specialising in ML research code quality.
 Analyse the provided code for bugs, ML-specific issues, and code quality problems.
 
@@ -225,7 +225,7 @@ Return ONLY the JSON object, no markdown."""
 class CodeAnalysisAgent(BaseAgent):
     """
     Agent 3 — Code Analysis.
-    Combines AST-based static detection with Groq semantic analysis.
+    Combines AST-based static detection with Gemini semantic analysis.
     """
 
     agent_name = "CodeAnalysis"
@@ -233,7 +233,7 @@ class CodeAnalysisAgent(BaseAgent):
 
     def __init__(self):
         super().__init__()
-        self.groq = get_groq()
+        self.gemini = get_gemini()
 
     async def execute(self, state: AgentXState) -> AgentXState:
         """Analyse repository for ML bugs and standard defects."""
@@ -277,22 +277,22 @@ class CodeAnalysisAgent(BaseAgent):
             except Exception as exc:
                 logger.warning("regex_analysis_failed", file=file_info["relative_path"], error=str(exc))
 
-        groq_tasks = []
+        gemini_tasks = []
         for file_info in files_to_analyse[:10]:
             full_path = Path(repo_path) / file_info["relative_path"]
             try:
                 source = full_path.read_text(errors="ignore")
                 if len(source) > 8000:
                     source = source[:8000]
-                groq_tasks.append(
-                    self._groq_analyse_file(source, file_info["relative_path"])
+                gemini_tasks.append(
+                    self._gemini_analyse_file(source, file_info["relative_path"])
                 )
             except Exception:
                 pass
 
-        if groq_tasks:
-            groq_results = await asyncio.gather(*groq_tasks, return_exceptions=True)
-            for result in groq_results:
+        if gemini_tasks:
+            gemini_results = await asyncio.gather(*gemini_tasks, return_exceptions=True)
+            for result in gemini_results:
                 if isinstance(result, list):
                     all_issues.extend(result)
 
@@ -358,8 +358,8 @@ class CodeAnalysisAgent(BaseAgent):
 
         return issues
 
-    async def _groq_analyse_file(self, source: str, file_path: str) -> List[Dict]:
-        """Use Groq LLM for semantic bug detection in a single file."""
+    async def _gemini_analyse_file(self, source: str, file_path: str) -> List[Dict]:
+        """Use Gemini LLM for semantic bug detection in a single file."""
         try:
             user_prompt = f"""File: {file_path}
 
@@ -369,7 +369,7 @@ class CodeAnalysisAgent(BaseAgent):
 
 Analyse this code for ML bugs and standard defects. Return JSON only."""
 
-            result = await self.groq.complete_structured_json(
+            result = await self.gemini.complete_structured_json(
                 system_prompt=_CODE_ANALYSIS_SYSTEM_PROMPT,
                 user_prompt=user_prompt,
                 max_tokens=2048,
@@ -392,12 +392,12 @@ Analyse this code for ML bugs and standard defects. Return JSON only."""
                     "code_snippet": issue.get("code_snippet", "")[:500],
                     "cvss_score": float(issue.get("cvss_score", 5.0)),
                     "research_impact_score": float(issue.get("research_impact_score", 5.0)),
-                    "detection_tool": "groq_llm",
+                    "detection_tool": "gemini_llm",
                 })
             return enriched
 
         except Exception as exc:
-            logger.warning("groq_file_analysis_failed", file=file_path, error=str(exc))
+            logger.warning("gemini_file_analysis_failed", file=file_path, error=str(exc))
             return []
 
 

@@ -16,7 +16,7 @@ Responsibilities:
   < 70%  → Human Review
 - Rejected patches routed back to Agent 6
 
-Tools: Groq (Adversarial Prompts), Multi-Criteria Scoring
+Tools: Gemini (Adversarial Prompts), Multi-Criteria Scoring
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from typing import Dict, List, Optional, Tuple
 
 from config.settings import settings
 from core.base_agent import BaseAgent
-from core.groq_client import get_groq
+from core.gemini_client import get_gemini
 from core.logging import get_logger
 from core.state import AgentXState
 from db.database import get_db_session
@@ -108,7 +108,7 @@ class ValidationAgent(BaseAgent):
 
     def __init__(self):
         super().__init__()
-        self.groq = get_groq()
+        self.gemini = get_gemini()
 
     async def execute(self, state: AgentXState) -> AgentXState:
         """Run adversarial validation debate on all patches."""
@@ -270,7 +270,7 @@ class ValidationAgent(BaseAgent):
     async def _proposer_review(self, context: str) -> Dict:
         """Proposer agent: defend the patch."""
         try:
-            return await self.groq.complete_structured_json(
+            return await self.gemini.complete_structured_json(
                 system_prompt=_PROPOSER_SYSTEM_PROMPT,
                 user_prompt=f"Review this patch:\n\n{context}",
                 max_tokens=1000,
@@ -282,7 +282,7 @@ class ValidationAgent(BaseAgent):
     async def _critic_review(self, context: str, proposer_scores: Dict) -> Dict:
         """Critic agent: challenge the patch."""
         try:
-            return await self.groq.complete_structured_json(
+            return await self.gemini.complete_structured_json(
                 system_prompt=_CRITIC_SYSTEM_PROMPT,
                 user_prompt=(
                     f"Challenge this patch:\n\n{context}\n\n"
@@ -299,7 +299,7 @@ class ValidationAgent(BaseAgent):
     ) -> Dict:
         """Senior lead synthesis after disagreement."""
         try:
-            return await self.groq.complete_structured_json(
+            return await self.gemini.complete_structured_json(
                 system_prompt=_SYNTHESIS_SYSTEM_PROMPT,
                 user_prompt=(
                     f"Synthesise this debate:\n\nContext:\n{context}\n\n"
@@ -377,7 +377,7 @@ def _compute_confidence(scores: Dict) -> float:
 
 
 def _fallback_validation(patch: Dict) -> Dict:
-    """Fallback validation when Groq is unavailable."""
+    """Fallback validation when Gemini is unavailable."""
     return {
         "validation_correctness": 70.0,
         "validation_security": 70.0,

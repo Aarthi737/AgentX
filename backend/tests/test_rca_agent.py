@@ -51,7 +51,7 @@ def test_rca_produces_reports(rca_state):
 
     with patch("agents.rca.rca_agent.get_db_session"):
         with patch(
-            "core.groq_client.GroqClient.complete_structured_json",
+            "core.gemini_client.GeminiClient.complete_structured_json",
             new=AsyncMock(return_value=mock_response),
         ):
             agent = RCAAgent()
@@ -86,13 +86,13 @@ def test_rca_empty_issues():
     assert result["rca_reports"] == []
 
 
-def test_rca_fallback_on_groq_failure(rca_state):
+def test_rca_fallback_on_gemini_failure(rca_state):
     from agents.rca.rca_agent import RCAAgent
 
     with patch("agents.rca.rca_agent.get_db_session"):
         with patch(
-            "core.groq_client.GroqClient.complete_structured_json",
-            new=AsyncMock(side_effect=Exception("Groq timeout")),
+            "core.gemini_client.GeminiClient.complete_structured_json",
+            new=AsyncMock(side_effect=Exception("Gemini timeout")),
         ):
             agent = RCAAgent()
             result = asyncio.run(

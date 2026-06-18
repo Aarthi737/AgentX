@@ -1,5 +1,5 @@
 """
-Tests for Groq client — JSON extraction and error handling.
+Tests for Groq compatibility shim — JSON extraction and error handling.
 """
 
 import pytest
