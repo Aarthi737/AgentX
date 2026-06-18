@@ -71,7 +71,7 @@ async def start_run(
         "afe_updates_pending": [],
     }
     async with get_db() as session:
-    repo = RunRepository(session)
+        repo = RunRepository(session)
 
     await repo.create({
         "id": run_id,
