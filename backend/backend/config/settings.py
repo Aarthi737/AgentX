@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-
+print("ACTIVE SETTINGS FILE:", __file__)
 class Settings(BaseSettings):
     # API Keys
     google_api_key: str = ""
