@@ -12,18 +12,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Application-wide configuration loaded once at startup."""
+    GOOGLE_API_KEY: str = ""
 
-    # ── Core ─────────────────────────────────────────────
-    GOOGLE_API_KEY: str = Field(...)
+    google_temperature: float = 0.1
+    google_max_tokens: int = 2048
 
-    app_env: str = Field(default="production")
-    app_secret_key: str = Field(default="change-me")
-    app_host: str = Field(default="0.0.0.0")
-    app_port: int = Field(default=8000)
-    app_log_level: str = Field(default="INFO")
-    app_cors_origins: str = Field(default="http://localhost:3000")
-
+    groq_api_key: str = ""
+    groq_temperature: float = 0.1
+    groq_max_tokens: int = 2048
     # ── Database ─────────────────────────────────────────
     supabase_url: str = Field(default="")
     supabase_anon_key: str = Field(default="")
