@@ -70,12 +70,23 @@ async def start_run(
         "learned_weights": {},
         "afe_updates_pending": [],
     }
+    async with get_db() as session:
+        repo = RunRepository(session)
+
+    await repo.create({
+        "id": run_id,
+        "status": RunStatus.PENDING,
+        "repo_url": req.repo_url,
+        "branch": req.branch,
+    })
 
     # Launch pipeline in background
     background_tasks.add_task(_run_pipeline_task, run_id, initial_state)
 
     ws_url = f"{settings.app_host}:{settings.app_port}/ws/runs/{run_id}"
     logger.info("run_started", run_id=run_id, repo=req.repo_url)
+
+    
 
     return RunStartResponse(
         run_id=run_id,

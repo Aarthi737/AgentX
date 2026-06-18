@@ -9,7 +9,7 @@ Behaviour:
 
 Learns:
 - Severity ranking weights per ML pattern
-- Groq prompt templates that produced accepted fixes
+- Gemini prompt templates that produced accepted fixes
 - Detection rule confidence thresholds
 - Test generation strategies
 
@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from config.settings import settings
-from core.groq_client import get_groq
+from core.gemini_client import get_gemini
 from core.logging import get_logger
 from db.database import get_db_session
 from db.models import FeedbackOutcome
@@ -63,7 +63,7 @@ class AdaptiveFeedbackEngine:
     """
 
     def __init__(self):
-        self.groq = get_groq()
+        self.gemini = get_gemini()
 
     async def process_pr_outcome(
         self,
@@ -228,44 +228,14 @@ class AdaptiveFeedbackEngine:
             except Exception:
                 pass
         return updates
-
+    
     async def _learn_from_modifications(
         self,
         human_modifications: str,
         ml_patterns: List[str],
     ) -> Dict:
-        """
-        When humans modify a fix before merging, use Groq to extract
-        the learning signal from the diff.
-        """
-        if not human_modifications or len(human_modifications) < 50:
-            return {}
+        return {}
 
-        try:
-            result = await self.groq.complete_structured_json(
-                system_prompt="""Analyse this human modification to an AI-generated fix.
-Extract learning signals.
-
-Return JSON:
-{
-  "what_was_wrong": "What the AI got wrong",
-  "correct_approach": "What the human did instead",
-  "pattern_refinement": "How to improve detection of this pattern",
-  "prompt_improvement": "Suggested improvement to the fix prompt"
-}""",
-                user_prompt=f"""Human modified this AI fix (diff):
-
-{human_modifications[:2000]}
-
-ML Patterns involved: {ml_patterns}
-
-What can we learn from this modification?""",
-                max_tokens=800,
-            )
-            return result
-        except Exception as exc:
-            logger.warning("modification_learning_failed", error=str(exc))
-            return {}
 
     async def get_stats(self) -> Dict:
         """Return AFE statistics for the dashboard."""

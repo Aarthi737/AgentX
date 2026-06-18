@@ -5,12 +5,12 @@ Phase 08 — Test Verification
 Responsibilities:
 - Auto-discover tests via Agent 2 coverage map
 - Execute tests in isolated Docker containers
-- Generate missing tests via Groq when coverage gaps found
+- Generate missing tests via Gemini when coverage gaps found
 - Regression + side-effect analysis
 - SAFE TO MERGE gate: NO → Human Review → Agent 6
 - Coverage delta calculation
 
-Tools: pytest, Jest, JUnit, Docker, coverage.py, Groq API
+Tools: pytest, Jest, JUnit, Docker, coverage.py, Gemini API
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Tuple
 
 from config.settings import settings
 from core.base_agent import BaseAgent
-from core.groq_client import get_groq
+from core.gemini_client import get_gemini
 from core.logging import get_logger
 from core.state import AgentXState
 from db.database import get_db_session
@@ -63,7 +63,7 @@ class VerificationAgent(BaseAgent):
 
     def __init__(self):
         super().__init__()
-        self.groq = get_groq()
+        self.gemini = get_gemini()
         self.docker = DockerService()
 
     async def execute(self, state: AgentXState) -> AgentXState:
@@ -264,14 +264,14 @@ class VerificationAgent(BaseAgent):
         issue: Dict,
         repo_path: str,
     ) -> Optional[Dict]:
-        """Use Groq to generate missing pytest tests for a patched function."""
+        """Use Gemini to generate missing pytest tests for a patched function."""
         file_path = issue.get("file_path", "")
         fixed_code = patch.get("fixed_code", "")
         if not fixed_code or not file_path.endswith(".py"):
             return None
 
         try:
-            result = await self.groq.complete_structured_json(
+            result = await self.gemini.complete_structured_json(
                 system_prompt=_TEST_GEN_SYSTEM_PROMPT,
                 user_prompt=f"""Generate tests for this patched module.
 

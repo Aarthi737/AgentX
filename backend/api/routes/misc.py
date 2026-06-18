@@ -92,7 +92,7 @@ async def receive_feedback(req: FeedbackRequest):
 
 @health_router.get("/health", response_model=HealthResponse)
 async def health_check(session: AsyncSession = Depends(get_db)):
-    """System health check — verifies DB and Groq connectivity."""
+    """System health check — verifies DB and LLM connectivity."""
     # Check DB
     db_status = "ok"
     try:
@@ -101,15 +101,15 @@ async def health_check(session: AsyncSession = Depends(get_db)):
     except Exception as exc:
         db_status = f"error: {exc}"
 
-    # Check Groq (lightweight)
-    groq_status = "ok" if settings.groq_api_key else "missing_api_key"
+    # Check LLM connectivity (Gemini / legacy Groq key)
+    llm_status = "ok" if settings.GOOGLE_API_KEY else "missing_api_key"
 
     return HealthResponse(
         status="healthy" if db_status == "ok" else "degraded",
         version="1.0.0",
         environment=settings.app_env,
         database=db_status,
-        groq=groq_status,
+        llm=llm_status,
     )
 
 

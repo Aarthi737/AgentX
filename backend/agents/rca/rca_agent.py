@@ -8,7 +8,7 @@ Responsibilities:
 - Research Impact Statement quantifying effect on reproducibility
 - Per-issue RCA reports persisted to Supabase
 
-Tools: Groq Llama 3.3 70B, AST context enrichment
+Tools: Gemini LLM, AST context enrichment
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from typing import Dict, List, Optional
 
 from config.settings import settings
 from core.base_agent import BaseAgent
-from core.groq_client import get_groq
+from core.gemini_client import get_gemini
 from core.logging import get_logger
 from core.state import AgentXState
 from db.database import get_db_session
@@ -59,7 +59,7 @@ class RCAAgent(BaseAgent):
 
     def __init__(self):
         super().__init__()
-        self.groq = get_groq()
+        self.gemini = get_gemini()
 
     async def execute(self, state: AgentXState) -> AgentXState:
         """Trace causal chains for all ranked issues."""
@@ -78,7 +78,7 @@ class RCAAgent(BaseAgent):
             f"Running RCA on {len(ranked_issues)} issues...",
         )
 
-        # Process issues in batches of 5 to respect Groq rate limits
+        # Process issues in batches of 5 to respect Gemini rate limits
         rca_reports: List[Dict] = []
         batch_size = 5
 
@@ -135,7 +135,7 @@ class RCAAgent(BaseAgent):
     async def _analyse_issue(
         self, issue: Dict, repo_path: str, state: AgentXState
     ) -> Dict:
-        """Perform RCA for a single issue using Groq + code context."""
+        """Perform RCA for a single issue using Gemini + code context."""
         # Build rich context from the file
         code_context = await self._get_code_context(
             repo_path,
@@ -171,7 +171,7 @@ class RCAAgent(BaseAgent):
 
 Trace the complete causal chain and assess research impact."""
 
-        result = await self.groq.complete_structured_json(
+        result = await self.gemini.complete_structured_json(
             system_prompt=_RCA_SYSTEM_PROMPT,
             user_prompt=user_prompt,
             max_tokens=1500,
@@ -231,7 +231,7 @@ Trace the complete causal chain and assess research impact."""
 
 
 def _fallback_rca(issue: Dict) -> Dict:
-    """Generate a deterministic fallback RCA when Groq is unavailable."""
+    """Generate a deterministic fallback RCA when Gemini is unavailable."""
     title = issue.get("title", "Unknown Issue")
     file_path = issue.get("file_path", "unknown file")
     desc = issue.get("description", "")

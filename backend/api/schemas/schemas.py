@@ -149,7 +149,7 @@ class HealthResponse(BaseModel):
     version: str
     environment: str
     database: str
-    groq: str
+    llm: str
 
 
 class ErrorResponse(BaseModel):

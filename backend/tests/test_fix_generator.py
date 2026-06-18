@@ -64,7 +64,7 @@ def test_fix_generator_produces_patches(fix_state):
 
     with patch("agents.fix_generator.fix_generator.get_db_session"):
         with patch(
-            "core.groq_client.GroqClient.complete_structured_json",
+            "core.gemini_client.GeminiClient.complete_structured_json",
             new=AsyncMock(return_value=mock_response),
         ):
             agent = FixGeneratorAgent()
@@ -103,13 +103,13 @@ def test_syntax_validation_catches_bad_code(fix_state):
     assert enriched["confidence_score"] < 80  # reduced due to syntax error
 
 
-def test_fallback_patch_on_groq_failure(fix_state):
+def test_fallback_patch_on_gemini_failure(fix_state):
     from agents.fix_generator.fix_generator import FixGeneratorAgent
 
     with patch("agents.fix_generator.fix_generator.get_db_session"):
         with patch(
-            "core.groq_client.GroqClient.complete_structured_json",
-            new=AsyncMock(side_effect=Exception("Groq down")),
+            "core.gemini_client.GeminiClient.complete_structured_json",
+            new=AsyncMock(side_effect=Exception("Gemini down")),
         ):
             agent = FixGeneratorAgent()
             result = asyncio.run(

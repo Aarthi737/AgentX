@@ -7,9 +7,9 @@ Responsibilities:
 - Hardcoded secrets detection (API keys, passwords, tokens)
 - Injection vulnerability detection (SQL, command, LDAP)
 - Dependency vulnerability scanning
-- Contextual code-flow analysis via Groq for complex vulnerabilities
+- Contextual code-flow analysis via Gemini for complex vulnerabilities
 
-Tools: Bandit, Semgrep, Regex patterns, Groq API
+Tools: Bandit, Semgrep, Regex patterns, Gemini API
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from typing import Dict, List, Optional
 
 from config.settings import settings
 from core.base_agent import BaseAgent
-from core.groq_client import get_groq
+from core.gemini_client import get_gemini
 from core.logging import get_logger
 from core.state import AgentXState
 from db.models import IssueType, IssueSeverity
@@ -155,7 +155,7 @@ SECRET_PATTERNS = [
     (r"AKIA[0-9A-Z]{16}", "AWS Access Key"),
 ]
 
-# Groq system prompt for security analysis
+# Gemini system prompt for security analysis
 _SECURITY_SYSTEM_PROMPT = """You are a senior application security engineer specialising in code security review.
 Analyse the provided code for security vulnerabilities based on OWASP Top 10 (2021).
 
@@ -192,7 +192,7 @@ class SecurityScannerAgent(BaseAgent):
 
     def __init__(self):
         super().__init__()
-        self.groq = get_groq()
+        self.gemini = get_gemini()
 
     async def execute(self, state: AgentXState) -> AgentXState:
         """Run all security scans concurrently."""
@@ -224,9 +224,9 @@ class SecurityScannerAgent(BaseAgent):
         # 3. Secret detection
         tasks.append(self._detect_secrets(repo_path, scan_files))
 
-        # 4. Groq contextual analysis on top security-sensitive files
+        # 4. Gemini contextual analysis on top security-sensitive files
         important_files = scan_files[:5]
-        tasks.append(self._groq_security_analysis(repo_path, important_files))
+        tasks.append(self._gemini_security_analysis(repo_path, important_files))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -364,17 +364,17 @@ class SecurityScannerAgent(BaseAgent):
                 pass
         return issues
 
-    async def _groq_security_analysis(
+    async def _gemini_security_analysis(
         self, repo_path: str, files: List[Dict]
     ) -> List[Dict]:
-        """Use Groq for contextual security analysis of key files."""
+        """Use Gemini for contextual security analysis of key files."""
         all_issues = []
         tasks = []
         for file_info in files[:5]:
             full_path = Path(repo_path) / file_info["relative_path"]
             try:
                 source = full_path.read_text(errors="ignore")[:6000]
-                tasks.append(self._groq_analyse_file(source, file_info["relative_path"]))
+                tasks.append(self._gemini_analyse_file(source, file_info["relative_path"]))
             except OSError:
                 pass
 
@@ -384,10 +384,10 @@ class SecurityScannerAgent(BaseAgent):
                 all_issues.extend(result)
         return all_issues
 
-    async def _groq_analyse_file(self, source: str, file_path: str) -> List[Dict]:
-        """Groq contextual security analysis for a single file."""
+    async def _gemini_analyse_file(self, source: str, file_path: str) -> List[Dict]:
+        """Gemini contextual security analysis for a single file."""
         try:
-            result = await self.groq.complete_structured_json(
+            result = await self.gemini.complete_structured_json(
                 system_prompt=_SECURITY_SYSTEM_PROMPT,
                 user_prompt=f"File: {file_path}\n\n```python\n{source}\n```\n\nAnalyse for security vulnerabilities.",
                 max_tokens=2048,
@@ -407,11 +407,11 @@ class SecurityScannerAgent(BaseAgent):
                     "code_snippet": v.get("code_snippet", "")[:300],
                     "cvss_score": float(v.get("cvss_score", 5.0)),
                     "research_impact_score": 5.0,
-                    "detection_tool": "groq_security",
+                    "detection_tool": "gemini_security",
                 })
             return enriched
         except Exception as exc:
-            logger.warning("groq_security_failed", file=file_path, error=str(exc))
+            logger.warning("gemini_security_failed", file=file_path, error=str(exc))
             return []
 
 

@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 # Set test environment before importing app modules
 os.environ.setdefault("APP_ENV", "test")
-os.environ.setdefault("GROQ_API_KEY", "test-key")
+os.environ.setdefault("GOOGLE_API_KEY", "test-key")
 os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
 os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
 os.environ.setdefault("SUPABASE_ANON_KEY", "test-anon-key")
@@ -118,9 +118,9 @@ def sample_rca_reports(sample_issues):
 
 
 @pytest.fixture
-def mock_groq():
-    """Mock GroqClient for tests that don't need real LLM calls."""
-    with patch("core.groq_client.GroqClient") as mock_cls:
+def mock_gemini():
+    """Mock GeminiClient for tests that don't need real LLM calls."""
+    with patch("core.gemini_client.GeminiClient") as mock_cls:
         instance = AsyncMock()
         instance.complete.return_value = '{"issues": []}'
         instance.complete_json.return_value = {"issues": []}

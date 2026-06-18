@@ -109,20 +109,21 @@ class OrchestratorAgent(BaseAgent):
         except Exception as exc:
             logger.error("db_run_create_failed", error=str(exc))
             # Non-fatal — continue pipeline
-
-        # ── Clone repository ──────────────────────────────────────────────────
+        # Clone repository to ephemeral Docker volume
         state = self._emit_progress(state, "Cloning repository...")
         branch = state.get("repo_branch", "main")
 
         try:
             repo_path = gh_service.clone_repo(repo_url, branch=branch)
             state["repo_local_path"] = repo_path
+
         except RuntimeError as exc:
             await self._fail_run(run_id, str(exc))
             state["error_message"] = str(exc)
             state["status"] = RunStatus.FAILED
-            return state
+            return state    #   
 
+          
         # ── Build file manifest ───────────────────────────────────────────────
         state = self._emit_progress(state, "Building file manifest...")
         manifest = gh_service.build_file_manifest(repo_path)
