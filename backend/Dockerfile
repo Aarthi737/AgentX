@@ -33,9 +33,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 git curl docker.io \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy installed packages from builder
-COPY --from=builder /install /usr/local
-
 # Copy application source
 COPY . .
 
