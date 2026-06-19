@@ -33,7 +33,8 @@ class Settings(BaseSettings):
 
     @property
     def is_production(self):
-        return self.app_env.lower() == "production"
+        env = getattr(self, "app_env", "development")
+        return env.lower() == "production"
 
     @property
     def cors_origins_list(self):
