@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from typing import List
-
+from db.database import get_db_session
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -70,8 +70,8 @@ async def start_run(
         "learned_weights": {},
         "afe_updates_pending": [],
     }
-    async with get_db() as session:
-        repo = RunRepository(session)
+    async with get_db_session() as session:
+    repo = RunRepository(session)
 
     await repo.create({
         "id": run_id,
