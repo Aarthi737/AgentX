@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: Optional[str] = None
     google_temperature: float = Field(default=0.1)
     google_max_tokens: int = Field(default=2048)
-
+    github_default_token: str = ""
     # ── Database ─────────────────────────────────────────
     supabase_url: str = Field(default="")
     supabase_anon_key: str = Field(default="")
