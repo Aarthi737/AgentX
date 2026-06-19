@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     app_log_level: str = "INFO"
 
     # DB
-    database_url: str = "sqlite:///./app.db"
+    database_url: str = "sqlite+aiosqlite:///./app.db"
 
     # CORS
     cors_origins: str = "*"
