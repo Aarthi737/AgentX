@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from github import Github, GithubException
-
+import git
 from core.logging import get_logger
 
 logger = get_logger(__name__)
