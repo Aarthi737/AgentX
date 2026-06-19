@@ -71,14 +71,16 @@ async def start_run(
         "afe_updates_pending": [],
     }
     async with get_db_session() as session:
-    repo = RunRepository(session)
+        repo = RunRepository(session)
 
-    await repo.create({
-        "id": run_id,
-        "status": RunStatus.PENDING,
-        "repo_url": req.repo_url,
-        "branch": req.branch,
-    })
+    await repo.create(
+        run_id=run_id,
+        repo_url=req.repo_url,
+        repo_owner="",
+        repo_name="",
+        repo_branch=req.branch,
+        github_token_hash="",
+    )
 
     # Launch pipeline in background
     background_tasks.add_task(_run_pipeline_task, run_id, initial_state)
