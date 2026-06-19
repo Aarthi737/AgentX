@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ProgressEvent } from '@/types';
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
-
+const WS_URL =
+  process.env.NEXT_PUBLIC_WS_URL ||
+  'wss://agentx-production-6943.up.railway.app'; 
+  
 export interface UseRunWebSocketOptions {
   runId: string | null;
   onEvent?: (event: ProgressEvent) => void;
