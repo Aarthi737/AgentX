@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     # API
     GOOGLE_API_KEY: str = ""
 
+    github_default_token: str = ""
+
     google_temperature: float = 0.1
     google_max_tokens: int = 2048
 
