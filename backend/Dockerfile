@@ -3,20 +3,26 @@
 # Multi-stage build: builder → runtime
 # ============================================================
 
-# ── Stage 1: Builder ─────────────────────────────────────────
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim
 
-WORKDIR /build
+WORKDIR /app
 
-# Install build deps
+# system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ libpq-dev curl git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python dependencies
-COPY requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt && pip install GitPython
+# install python dependencies
+COPY requirements.txt .
 
+RUN pip install --no-cache-dir -r requirements.txt
+
+# copy full project
+COPY . .
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 # ── Stage 2: Runtime ─────────────────────────────────────────
 FROM python:3.11-slim AS runtime
 
