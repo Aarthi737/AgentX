@@ -5,7 +5,7 @@ import type { ProgressEvent } from '@/types';
 
 const WS_URL =
   process.env.NEXT_PUBLIC_WS_URL ||
-  'wss://agentx-production-6943.up.railway.app'; 
+  'ws://localhost:8000';
   
 export interface UseRunWebSocketOptions {
   runId: string | null;
